@@ -1,0 +1,84 @@
+* {
+  font-family: "roboto", monospace;
+}
+
+window {
+  background-color: transparent;
+}
+
+.song-box {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(0, 255, 65, 0.3);
+  border-radius: 12px 0px 0px 0px;
+  padding: 12px 16px;
+  color: #00ff41;
+}
+
+.song-icon {
+  font-size: 18px;
+  color: #89b4fa;
+}
+
+.song-title {
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.song-name {
+  font-size: 16px;
+  color: #c6d3ff;
+  font-weight: bold;
+  padding: 4px 0;
+}
+
+.song-change-btn {
+  font-size: 14px;
+  color: #89b4fa;
+  padding: 2px 6px;
+  border: 1px solid rgba(137, 180, 250, 0.3);
+  border-radius: 6px;
+}
+
+.song-change-btn:hover {
+  background: rgba(137, 180, 250, 0.15);
+  color: #cdd6f4;
+}
+
+.song-btn-yt {
+  font-size: 14px;
+  color: #f38ba8;
+  padding: 3px 8px;
+  border: 1px solid rgba(243, 139, 168, 0.3);
+  border-radius: 6px;
+}
+
+.song-btn-yt:hover {
+  background: rgba(243, 139, 168, 0.15);
+  color: #f5c2e7;
+}
+
+.song-btn-sp {
+  font-size: 14px;
+  color: #a6e3a1;
+  padding: 3px 8px;
+  border: 1px solid rgba(166, 227, 161, 0.3);
+  border-radius: 6px;
+}
+
+.song-btn-sp:hover {
+  background: rgba(166, 227, 161, 0.15);
+  color: #b9fbc0;
+}
+
+.song-btn-dz {
+  font-size: 14px;
+  color: #89b4fa;
+  padding: 3px 8px;
+  border: 1px solid rgba(137, 180, 250, 0.3);
+  border-radius: 6px;
+}
+
+.song-btn-dz:hover {
+  background: rgba(137, 180, 250, 0.15);
+  color: #cdd6f4;
+}

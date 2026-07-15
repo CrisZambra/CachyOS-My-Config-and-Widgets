@@ -1,0 +1,67 @@
+(defpoll song-of-day
+  :interval "5s"
+  :initial "Cargando..."
+  `bash /home/cristopher/.config/eww/song.sh`)
+
+(defpoll song-display
+  :interval "0.3s"
+  `bash /home/cristopher/.config/eww/scroll-text.sh`)
+
+(defwidget song-widget []
+  (box
+    :class "song-box"
+    :orientation "v"
+    :space-evenly false
+    :spacing 6
+
+    (box
+      :orientation "h"
+      :space-evenly false
+      :spacing 8
+      (label :class "song-icon" :text "♪")
+      (label :class "song-title" :text "Cancion del dia")
+      (box :hexpand true)
+      (button
+        :class "song-change-btn"
+        :onclick "bash /home/cristopher/.config/eww/next-song.sh"
+        "↺")
+    )
+
+    (label
+      :class "song-name"
+      :text song-display
+      :xalign 0
+    )
+
+    (box
+      :orientation "h"
+      :space-evenly true
+      :spacing 6
+      (button
+        :class "song-btn-yt"
+        :onclick "bash /home/cristopher/.config/eww/search-song.sh youtube"
+        "▶ YouTube")
+      (button
+        :class "song-btn-sp"
+        :onclick "bash /home/cristopher/.config/eww/search-song.sh spotify"
+        "♫ Spotify")
+      (button
+        :class "song-btn-dz"
+        :onclick "bash /home/cristopher/.config/eww/search-song.sh deezer"
+        "♪ Deezer")
+    )
+  )
+)
+
+(defwindow song-window
+  :monitor 0
+  :geometry (geometry
+    :x "20px"
+    :y "20px"
+    :width "500px"
+    :height "130px"
+    :anchor "top left")
+  :stacking "bottom"
+  :exclusive false
+  :focusable false
+  (song-widget))

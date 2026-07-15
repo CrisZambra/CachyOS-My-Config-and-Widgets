@@ -1,0 +1,43 @@
+{
+  "bar.customModules.storage.paths": [
+    "/"
+  ],
+  "bar.position": "bottom",
+  "bar.layer": "top",
+  "theme.bar.location": "bottom",
+  "theme.font.weight": 400,
+  "theme.bar.enableShadow": false,
+  "theme.bar.floating": false,
+  "theme.bar.border.location": "none",
+  "theme.bar.opacity": 80,
+  "bar.launcher.autoDetectIcon": false,
+  "bar.layouts": {
+    "eDP-1": {
+      "left": [
+        "dashboard",
+        "windowtitle"
+      ],
+      "middle": [
+        "clock",
+        "media"
+      ],
+      "right": [
+        "cpu",
+        "ram",
+        "network",
+        "volume",
+        "brightness",
+        "battery",
+        "tray"
+      ]
+    }
+  },
+  "menus.clock.weather.enabled": false,
+  "menus.clock.time.military": true,
+  "menus.dashboard.shortcuts.left.shortcut1.icon": "",
+  "menus.dashboard.shortcuts.left.shortcut1.tooltip": "Steam",
+  "menus.dashboard.shortcuts.left.shortcut1.command": "steam",
+  "menus.dashboard.shortcuts.left.shortcut4.icon": "",
+  "menus.dashboard.shortcuts.left.shortcut4.tooltip": "Brave",
+  "menus.dashboard.shortcuts.left.shortcut4.command": "brave"
+}
