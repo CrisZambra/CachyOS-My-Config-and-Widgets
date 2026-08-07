@@ -1,6 +1,6 @@
 # CachyOS - My Config and Widgets
 
-Configuración de escritorio de [CachyOS](https://cachyos.org/) + [Hyprland](https://hyprland.org/) que uso día a día en un laptop 4K (HiDPI, escala 2.00), junto con los widgets de escritorio que fui armando (canción del día, lluvia Matrix, sprites de DOOM rotando).
+Configuración de escritorio de [CachyOS](https://cachyos.org/) + [Hyprland](https://hyprland.org/) que uso día a día en un laptop 4K (HiDPI, escala 2.00), junto con los widgets de escritorio que fui armando (canción del día, lluvia Matrix, sprites de DOOM rotando, cabezas parlantes de Hotline Miami 2).
 
 No es un instalador "un click": son mis dotfiles reales, documentados para que los adaptes a tu propio setup.
 
@@ -21,10 +21,12 @@ No es un instalador "un click": son mis dotfiles reales, documentados para que l
 - **Canción del día** (`eww.yuck`, `eww.scss`, `song.sh`, `next-song.sh`, `scroll-text.sh`, `search-song.sh`, `clean_playlist.sh`): elige una canción "del día" desde una lista generada con `clean_playlist.sh` a partir de playlists `.m3u8`, con botones para buscarla en YouTube/Spotify/Deezer.
 - **Matrix Rain** (`matrix-window.py`): ventana GTK3 + `gtk-layer-shell` en capa `BOTTOM` (detrás de todas las ventanas), lluvia de caracteres estilo Matrix, corre a ~15fps por consumo de CPU.
 - **DOOM widget** (`doom-widget.py`, `doom-assets/`): sprites de enemigos de DOOM rotando en 360°, cambian de enemigo cada 6s.
+- **Hotline Miami 2 widget** (`hlm2-widget.py`, `hlm2-assets/`): cabezas animadas de personajes enmascarados (Richard, Cobra, Tony, Alex, Ash, Swan, Rat, Corey) con la animación de "hablar" del juego y un balanceo rotatorio leve tipo bobble-head; cambia de personaje cada 6s.
 
 ## Importante: qué NO incluye este repo (y por qué)
 
 - **Sprites de DOOM extraídos ni `doom-logo.png`**: son assets con copyright de id Software. En vez de eso incluyo `eww/doom-assets/extract-sprites.sh`, que los extrae de **tu propia copia legal** de `DOOM.WAD`/`DOOM2.WAD` con `deutex`. Sin sprites, el widget muestra el texto "-- DOOM --" en vez del logo (no rompe nada).
+- **Sprites de Hotline Miami 2 extraídos ni `hlm2-logo.png`**: son assets con copyright de Dennaton Games / Devolver Digital. En vez de eso incluyo `eww/hlm2-assets/extract-faces.py`, que los extrae directamente de **tu propia copia instalada del juego** (`hlm2_data_desktop.wad`, formato propietario "AGAR" reverse-engineered para este script — no distribuye nada del juego, solo lo lee). Sin `hlm2-logo.png`, el widget muestra el texto "-- HOTLINE MIAMI 2 --" en vez del logo.
 - **El pack de cursores de Windows** (origen de `MyCursor`): tampoco se redistribuye por licencia. `setup-cursor.sh` espera un pack `.cur`/`.ani` propio en la carpeta que definas en `SOURCE_DIR`.
 
 ## Dependencias
@@ -34,6 +36,7 @@ Repos oficiales (`pacman -S`):
 hyprland hyprpaper grim grimblast wf-recorder brightnessctl wireplumber
 imv mpv ffmpeg thunar nwg-look xorg-xrdb ufw
 gtk-layer-shell gtk4-layer-shell python-gobject python-cairo
+imagemagick         # extract-faces.py usa "convert"/"identify" para cortar sprites
 ```
 
 AUR (`paru -S`):
@@ -80,14 +83,22 @@ deutex              # extrae sprites de WADs de DOOM
    ```
    Opcional: coloca tu propio `doom-logo.png` en `~/.config/eww/` si quieres el logo en vez del texto "-- DOOM --".
 
-5. **Canción del día**: genera la lista desde tus playlists `.m3u8`:
+5. **Hotline Miami 2 widget**: extrae las caras desde tu propia instalación del juego (Steam):
+   ```bash
+   python3 ~/.config/eww/hlm2-assets/extract-faces.py \
+     "$HOME/.local/share/Steam/steamapps/common/Hotline Miami 2/hlm2_data_desktop.wad" \
+     ~/.config/eww/hlm2-assets/faces
+   ```
+   Opcional: coloca tu propio `hlm2-logo.png` en `~/.config/eww/` si quieres el logo en vez del texto "-- HOTLINE MIAMI 2 --".
+
+6. **Canción del día**: genera la lista desde tus playlists `.m3u8`:
    ```bash
    bash ~/.config/eww/clean_playlist.sh /ruta/a/tus/playlists/
    ```
 
-6. **Wallpapers**: coloca tus fondos en `~/Pictures/4k/` (o cambia `WALLPAPER_DIR` en `wallpaper-cycle.sh`).
+7. **Wallpapers**: coloca tus fondos en `~/Pictures/4k/` (o cambia `WALLPAPER_DIR` en `wallpaper-cycle.sh`).
 
-7. Recarga Hyprland:
+8. Recarga Hyprland:
    ```bash
    hyprctl reload
    ```
