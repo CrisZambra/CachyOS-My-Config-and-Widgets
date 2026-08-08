@@ -12,14 +12,35 @@ from gi.repository import Gtk, Gdk, GLib, GtkLayerShell, GdkPixbuf
 FACES_DIR = "/home/cristopher/.config/eww/hlm2-assets/faces"
 LOGO_PATH = "/home/cristopher/.config/eww/hlm2-logo.png"
 
-WIDGET_W = 250
-WIDGET_H = 290
-SPRITE_W = 210
-SPRITE_H = 210
+WIDGET_W = 360
+WIDGET_H = 480
+SPRITE_W = 250
+SPRITE_H = 250
+# Margen mínimo (px) entre el borde superior del lienzo y la cabeza -
+# se calcula la posición dinámicamente por personaje/frame para que
+# quede lo más arriba posible SIN recortarse (antes, un pivote fijo
+# hacía que las cabezas más altas se cortaran por arriba).
+SPRITE_TOP_MARGIN = 6
 # Los frames se escalan a este % del área del sprite para dejar espacio
 # a la rotación (a un ángulo bajo como este, casi no hace falta margen).
-SPRITE_SCALE = 0.9
+SPRITE_SCALE = 0.97
 MAX_ROTATION_DEG = 5.0
+
+# El "Neon Void" de Hotline Miami: el fondo detrás de los retratos que
+# hablan cicla de color constantemente. El juego lo tiene hardcodeado
+# en el código (no hay ningún asset con los valores exactos - se
+# confirmó al no encontrar ninguna textura ni shader con esos colores),
+# así que esto es una aproximación usando la paleta documentada del
+# juego (cian/rosa) más los pares mencionados por la comunidad
+# (cian-púrpura, verde-naranja) ciclando en secuencia.
+VOID_COLORS = [
+    (0x2e, 0xff, 0xff),  # cian
+    (0xb0, 0x26, 0xff),  # púrpura
+    (0xfe, 0x6d, 0xbc),  # rosa/magenta
+    (0xff, 0x6b, 0x00),  # naranja
+    (0x39, 0xff, 0x74),  # verde neón
+]
+VOID_CUT = 0.18  # qué tan angosto es el lado inferior respecto al superior
 
 CHARACTERS = {
     "Richard": "Richard",
@@ -50,6 +71,10 @@ def load_frame(char_dir, index, target_w, target_h):
     return pixbuf.scale_simple(nw, nh, GdkPixbuf.InterpType.NEAREST)
 
 
+def lerp_color(c1, c2, t):
+    return tuple(c1[i] + (c2[i] - c1[i]) * t for i in range(3))
+
+
 class HLM2Widget(Gtk.Window):
     def __init__(self):
         super().__init__()
@@ -72,19 +97,14 @@ class HLM2Widget(Gtk.Window):
             self.set_visual(visual)
 
         css = b"""
-        .hlm2-box {
-            background: rgba(0, 0, 0, 0.75);
-            border: 1px solid rgba(255, 0, 90, 0.7);
-            border-radius: 8px;
-            padding: 8px;
-        }
         .hlm2-label {
-            color: #ff005a;
+            color: #ffffff;
             font-size: 19px;
             font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
         }
         .hlm2-title {
-            color: #ff66a3;
+            color: #ffffff;
             font-size: 10px;
         }
         """
@@ -96,14 +116,24 @@ class HLM2Widget(Gtk.Window):
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         )
 
+        overlay = Gtk.Overlay()
+        self.add(overlay)
+
+        self.bg_area = Gtk.DrawingArea()
+        self.bg_area.connect('draw', self.on_draw_bg)
+        overlay.add(self.bg_area)
+
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        outer.get_style_context().add_class("hlm2-box")
-        self.add(outer)
+        outer.set_margin_top(10)
+        outer.set_margin_bottom(10)
+        outer.set_margin_start(10)
+        outer.set_margin_end(10)
+        overlay.add_overlay(outer)
 
         if os.path.exists(LOGO_PATH):
             logo_pixbuf = GdkPixbuf.Pixbuf.new_from_file(LOGO_PATH)
             lw, lh = logo_pixbuf.get_width(), logo_pixbuf.get_height()
-            nw = int((WIDGET_W - 16) * 0.8)
+            nw = int((WIDGET_W - 16) * 0.9)
             nh = int(lh * nw / lw)
             logo_pixbuf = logo_pixbuf.scale_simple(nw, nh, GdkPixbuf.InterpType.BILINEAR)
             logo_image = Gtk.Image.new_from_pixbuf(logo_pixbuf)
@@ -134,10 +164,12 @@ class HLM2Widget(Gtk.Window):
         self.frame_count = 1
         self.current_pixbuf = None
         self.rotation_phase = 0.0
+        self.void_phase = 0.0
 
         GLib.timeout_add(6000, self.next_character)
         GLib.timeout_add(110, self.next_frame)
         GLib.timeout_add(40, self.tick_rotation)
+        GLib.timeout_add(40, self.tick_void)
 
         self.update_face()
         self.show_all()
@@ -159,6 +191,41 @@ class HLM2Widget(Gtk.Window):
         self.sprite_area.queue_draw()
         return True
 
+    def tick_void(self):
+        self.void_phase = (self.void_phase + 0.006) % len(VOID_COLORS)
+        self.bg_area.queue_draw()
+        return True
+
+    def current_void_color(self):
+        i = int(self.void_phase)
+        t = self.void_phase - i
+        c1 = VOID_COLORS[i]
+        c2 = VOID_COLORS[(i + 1) % len(VOID_COLORS)]
+        r, g, b = lerp_color(c1, c2, t)
+        return r / 255, g / 255, b / 255
+
+    def on_draw_bg(self, widget, cr):
+        w = widget.get_allocated_width()
+        h = widget.get_allocated_height()
+        cut = w * VOID_CUT
+
+        # Cuadrilátero: lado derecho vertical (ángulos rectos arriba y
+        # abajo), lado superior más largo que el inferior, lado
+        # izquierdo en diagonal - un rectángulo con un triángulo recto
+        # pegado arriba a la izquierda.
+        cr.move_to(0, 0)
+        cr.line_to(w, 0)
+        cr.line_to(w, h)
+        cr.line_to(cut, h)
+        cr.close_path()
+
+        r, g, b = self.current_void_color()
+        cr.set_source_rgba(r, g, b, 0.85)
+        cr.fill_preserve()
+        cr.set_source_rgba(0, 0, 0, 0.9)
+        cr.set_line_width(2)
+        cr.stroke()
+
     def on_draw_sprite(self, widget, cr):
         if not self.current_pixbuf:
             return
@@ -168,8 +235,15 @@ class HLM2Widget(Gtk.Window):
         pw = self.current_pixbuf.get_width()
         ph = self.current_pixbuf.get_height()
 
+        # Sube la cabeza lo más posible sin que se recorte contra el
+        # borde superior del lienzo: el centro de rotación se calcula
+        # a partir del tamaño real de esta imagen, con un pequeño
+        # margen extra para la leve rotación del bamboleo.
+        half_diag = (ph / 2) * 1.05
+        pivot_y = min(h / 2, SPRITE_TOP_MARGIN + half_diag)
+
         cr.save()
-        cr.translate(w / 2, h / 2)
+        cr.translate(w / 2, pivot_y)
         cr.rotate(math.radians(angle_deg))
         cr.translate(-pw / 2, -ph / 2)
         Gdk.cairo_set_source_pixbuf(cr, self.current_pixbuf, 0, 0)
