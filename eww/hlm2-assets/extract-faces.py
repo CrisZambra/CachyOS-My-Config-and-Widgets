@@ -110,6 +110,21 @@ CHARACTERS = {
     "Waitress": "Waitress",
     "Writer": "Writer",
     "WriterWife": "Writer's Wife",
+    "Bear": "Bear",
+    "Tiger": "Tiger",
+    "Zebra": "Zebra",
+}
+
+# Bear, Tiger y Zebra son personajes jugables (los otros "Fans"
+# enmascarados, inspirados en el protagonista de Hotline Miami 1) pero
+# el juego no les dio un retrato de diálogo animado - no existe
+# sprFaceBear/Tiger/Zebra. Lo más parecido que hay en el mismo atlas
+# es el ícono estático de su máscara (sprMask<nombre>), así que se usa
+# ese en su lugar (sin animación de boca, es una sola imagen).
+SPRITE_NAME_OVERRIDES = {
+    "Bear": "sprMaskBear",
+    "Tiger": "sprMaskTiger",
+    "Zebra": "sprMaskZebra",
 }
 
 
@@ -216,8 +231,9 @@ def main():
     os.makedirs(out_dir, exist_ok=True)
 
     for internal_name in CHARACTERS:
-        png_key = f"Atlases/Sprites/Faces/sprFace{internal_name}.png"
-        meta_key = f"Atlases/Sprites/Faces/sprFace{internal_name}.meta"
+        sprite_name = SPRITE_NAME_OVERRIDES.get(internal_name, f"sprFace{internal_name}")
+        png_key = f"Atlases/Sprites/Faces/{sprite_name}.png"
+        meta_key = f"Atlases/Sprites/Faces/{sprite_name}.meta"
 
         if png_key not in entries or meta_key not in entries:
             print(f"  [omitido] no encontrado: {internal_name}")
@@ -231,7 +247,6 @@ def main():
             f.write(png_bytes)
 
         sprites = parse_atlas_meta(meta_bytes)
-        sprite_name = f"sprFace{internal_name}"
         frames = sprites.get(sprite_name)
         if not frames:
             print(f"  [omitido] sin frames en meta: {internal_name}")

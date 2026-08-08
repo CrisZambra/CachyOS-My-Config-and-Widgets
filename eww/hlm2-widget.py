@@ -20,7 +20,7 @@ SPRITE_H = 380
 # se calcula la posición dinámicamente por personaje/frame para que
 # quede lo más arriba posible SIN recortarse (antes, un pivote fijo
 # hacía que las cabezas más altas se cortaran por arriba).
-SPRITE_TOP_MARGIN = -10
+SPRITE_TOP_MARGIN = 5
 # Los frames se escalan a este % del área del sprite para dejar espacio
 # a la rotación (a un ángulo bajo como este, casi no hace falta margen).
 SPRITE_SCALE = 0.97
@@ -43,92 +43,21 @@ VOID_COLORS = [
 VOID_CUT = 0.18  # qué tan angosto es el lado inferior respecto al superior
 
 CHARACTERS = {
-    "50Manager": "Manager",
-    "50ManagerGlad": "Manager (Glad)",
-    "Alex": "Alex",
-    "Andy": "Andy",
-    "Ash": "Ash",
-    "Biker": "Biker",
     "BikerHelmet": "Biker (Helmet)",
-    "BlackSquad": "Black Squad",
-    "Cobra": "Cobra",
-    "CobraHappy": "Cobra (Happy)",
-    "CobraPhone": "Cobra (Phone)",
-    "ColombianBoss": "Colombian Boss",
     "Cop": "Cop",
-    "CopPanic": "Cop (Panic)",
-    "CopPhone": "Cop (Phone)",
-    "CopyClerk": "Copy Clerk",
-    "Corey": "Corey",
-    "CSI": "CSI",
-    "Dennis": "Dennis",
-    "Director": "Director",
     "Father": "Father",
-    "FatSquad": "Fat Squad",
-    "GangLeader": "Gang Leader",
-    "General": "General",
-    "GeneralBlood": "General (Blood)",
     "GeneralDown": "General (Down)",
-    "GeneralPanther": "General (Panther)",
-    "Girl": "Girl",
-    "GirlAngry": "Girl (Angry)",
-    "Guard": "Guard",
-    "Hammer": "Hammer",
     "Henchman": "Henchman",
-    "HenchmanGirlfriend": "Henchman's Girlfriend",
-    "Hobo": "Hobo",
-    "Host": "Host",
-    "HostAnxious": "Host (Anxious)",
-    "HostTwitch": "Host (Twitch)",
-    "Inspector": "Inspector",
-    "Jonatan": "Jonatan",
-    "Judge": "Judge",
-    "Lawyer": "Lawyer",
-    "Mark": "Mark",
-    "Nicke": "Nicke",
     "NickeStore": "Nicke (Store)",
-    "NPC1": "NPC",
-    "Pig": "Pig",
-    "PigAngry": "Pig (Angry)",
     "PigButcher": "Pig Butcher",
     "PigMask": "Pig (Mask)",
-    "PigPhone": "Pig (Phone)",
-    "PigPsycho": "Pig (Psycho)",
-    "PigSilent": "Pig (Silent)",
-    "PizzaDude": "Pizza Dude",
-    "Police": "Police",
-    "PoliceChief": "Police Chief",
-    "PoliceInterrogation": "Police (Interrogation)",
-    "PoliceScared": "Police (Scared)",
-    "PrisonBoss": "Prison Boss",
-    "Prosecutor": "Prosecutor",
-    "Rat": "Rat",
-    "RatCassettes": "Rat (Cassettes)",
-    "RatMom": "Rat's Mom",
-    "RatPhone": "Rat (Phone)",
     "RatShades": "Rat (Shades)",
     "Richard": "Richard",
-    "Robber": "Robber",
-    "RussianCobra": "Russian Cobra",
-    "RussianParty": "Russian Party",
-    "SaunaGangster": "Sauna Gangster",
-    "Sister": "Sister",
-    "Soldier": "Soldier",
     "Son": "Son",
-    "SonAngry": "Son (Angry)",
-    "SonGate": "Son (Gate)",
-    "SonGateCover": "Son (Gate Cover)",
-    "SonRobber": "Son (Robber)",
-    "Swan": "Swan",
-    "Swat": "Swat",
-    "SwatBoss": "Swat Boss",
-    "Tattooer": "Tattooer",
-    "Tony": "Tony",
-    "Ventriloquist": "Ventriloquist",
-    "VIPGuard": "VIP Guard",
-    "Waitress": "Waitress",
     "Writer": "Writer",
-    "WriterWife": "Writer's Wife",
+    "Bear": "Bear",
+    "Tiger": "Tiger",
+    "Zebra": "Zebra",
 }
 
 
@@ -166,7 +95,7 @@ class HLM2Widget(Gtk.Window):
         GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.RIGHT, True)
         GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.TOP, True)
         GtkLayerShell.set_margin(self, GtkLayerShell.Edge.RIGHT, 20)
-        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.TOP, 546)
+        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.TOP, 20)
         GtkLayerShell.set_exclusive_zone(self, -1)
 
         screen = self.get_screen()
@@ -203,14 +132,23 @@ class HLM2Widget(Gtk.Window):
         outer.set_margin_end(10)
         overlay.add_overlay(outer)
 
+        self.logo_pixbuf = None
         if os.path.exists(LOGO_PATH):
             logo_pixbuf = GdkPixbuf.Pixbuf.new_from_file(LOGO_PATH)
             lw, lh = logo_pixbuf.get_width(), logo_pixbuf.get_height()
             nw = int((WIDGET_W - 16) * 0.9)
             nh = int(lh * nw / lw)
-            logo_pixbuf = logo_pixbuf.scale_simple(nw, nh, GdkPixbuf.InterpType.BILINEAR)
-            logo_image = Gtk.Image.new_from_pixbuf(logo_pixbuf)
-            outer.pack_start(logo_image, False, False, 2)
+            self.logo_pixbuf = logo_pixbuf.scale_simple(nw, nh, GdkPixbuf.InterpType.BILINEAR)
+
+            # Lienzo un poco más grande que el logo para que, al
+            # balancearse como en Hotline Miami 1, las puntas no se
+            # recorten contra el borde del área de dibujo.
+            box_w = int(nw * 1.2)
+            box_h = int(nh * 1.2)
+            self.logo_area = Gtk.DrawingArea()
+            self.logo_area.set_size_request(box_w, box_h)
+            self.logo_area.connect('draw', self.on_draw_logo)
+            outer.pack_start(self.logo_area, False, False, 2)
         else:
             title = Gtk.Label(label="-- HOTLINE MIAMI 2 --")
             title.get_style_context().add_class("hlm2-title")
@@ -262,7 +200,26 @@ class HLM2Widget(Gtk.Window):
     def tick_rotation(self):
         self.rotation_phase += 0.05
         self.sprite_area.queue_draw()
+        if self.logo_pixbuf:
+            self.logo_area.queue_draw()
         return True
+
+    def on_draw_logo(self, widget, cr):
+        if not self.logo_pixbuf:
+            return
+        angle_deg = math.sin(self.rotation_phase) * MAX_ROTATION_DEG
+        w = widget.get_allocated_width()
+        h = widget.get_allocated_height()
+        lw = self.logo_pixbuf.get_width()
+        lh = self.logo_pixbuf.get_height()
+
+        cr.save()
+        cr.translate(w / 2, h / 2)
+        cr.rotate(math.radians(angle_deg))
+        cr.translate(-lw / 2, -lh / 2)
+        Gdk.cairo_set_source_pixbuf(cr, self.logo_pixbuf, 0, 0)
+        cr.paint()
+        cr.restore()
 
     def tick_void(self):
         self.void_phase = (self.void_phase + 0.006) % len(VOID_COLORS)
@@ -328,7 +285,7 @@ class HLM2Widget(Gtk.Window):
         pivot_y = min(h / 2, SPRITE_TOP_MARGIN -10 + half_diag)
 
         cr.save()
-        cr.translate((w + 50) / 2, pivot_y)
+        cr.translate((w + 10) / 2, pivot_y)
         cr.rotate(math.radians(angle_deg))
         cr.translate(-pw / 2, -ph / 2)
         Gdk.cairo_set_source_pixbuf(cr, self.current_pixbuf, 0, 0)
