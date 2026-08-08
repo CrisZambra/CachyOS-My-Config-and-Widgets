@@ -21,7 +21,8 @@ No es un instalador "un click": son mis dotfiles reales, documentados para que l
 - **Canción del día** (`eww.yuck`, `eww.scss`, `song.sh`, `next-song.sh`, `scroll-text.sh`, `search-song.sh`, `clean_playlist.sh`): elige una canción "del día" desde una lista generada con `clean_playlist.sh` a partir de playlists `.m3u8`, con botones para buscarla en YouTube/Spotify/Deezer.
 - **Matrix Rain** (`matrix-window.py`): ventana GTK3 + `gtk-layer-shell` en capa `BOTTOM` (detrás de todas las ventanas), lluvia de caracteres estilo Matrix, corre a ~15fps por consumo de CPU.
 - **DOOM widget** (`doom-widget.py`, `doom-assets/`): sprites de enemigos de DOOM rotando en 360°, cambian de enemigo cada 6s.
-- **Hotline Miami 2 widget** (`hlm2-widget.py`, `hlm2-assets/`): cabezas animadas de personajes enmascarados (Richard, Cobra, Tony, Alex, Ash, Swan, Rat, Corey) con la animación de "hablar" del juego y un balanceo rotatorio leve tipo bobble-head; cambia de personaje cada 6s.
+- **Hotline Miami 2 widget** (`hlm2-widget.py`, `hlm2-assets/`): cabezas animadas de los ~87 personajes con diálogo del juego, con la animación de "hablar" y un balanceo rotatorio leve tipo bobble-head; cambia de personaje cada 6s. El fondo es un panel con la forma y el ciclo de color (aproximado) del "Neon Void" del juego.
+- **Selector de widget** (`widget-selector.sh`): en vez de arrancar siempre el mismo, elige al azar entre DOOM y Hotline Miami 2 cada vez que inicia sesión Hyprland (ver `hyprland.conf`, que llama a este script en el `exec-once` en vez de lanzar un widget fijo).
 
 ## Importante: qué NO incluye este repo (y por qué)
 

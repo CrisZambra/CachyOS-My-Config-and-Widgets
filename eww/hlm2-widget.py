@@ -12,15 +12,15 @@ from gi.repository import Gtk, Gdk, GLib, GtkLayerShell, GdkPixbuf
 FACES_DIR = "/home/cristopher/.config/eww/hlm2-assets/faces"
 LOGO_PATH = "/home/cristopher/.config/eww/hlm2-logo.png"
 
-WIDGET_W = 360
-WIDGET_H = 480
-SPRITE_W = 250
-SPRITE_H = 250
+WIDGET_W = 400
+WIDGET_H = 540
+SPRITE_W = 380
+SPRITE_H = 380
 # Margen mínimo (px) entre el borde superior del lienzo y la cabeza -
 # se calcula la posición dinámicamente por personaje/frame para que
 # quede lo más arriba posible SIN recortarse (antes, un pivote fijo
 # hacía que las cabezas más altas se cortaran por arriba).
-SPRITE_TOP_MARGIN = 6
+SPRITE_TOP_MARGIN = -10
 # Los frames se escalan a este % del área del sprite para dejar espacio
 # a la rotación (a un ángulo bajo como este, casi no hace falta margen).
 SPRITE_SCALE = 0.97
@@ -43,14 +43,92 @@ VOID_COLORS = [
 VOID_CUT = 0.18  # qué tan angosto es el lado inferior respecto al superior
 
 CHARACTERS = {
-    "Richard": "Richard",
-    "Cobra": "Cobra",
-    "Tony": "Tony",
+    "50Manager": "Manager",
+    "50ManagerGlad": "Manager (Glad)",
     "Alex": "Alex",
+    "Andy": "Andy",
     "Ash": "Ash",
-    "Swan": "Swan",
-    "Rat": "Rat",
+    "Biker": "Biker",
+    "BikerHelmet": "Biker (Helmet)",
+    "BlackSquad": "Black Squad",
+    "Cobra": "Cobra",
+    "CobraHappy": "Cobra (Happy)",
+    "CobraPhone": "Cobra (Phone)",
+    "ColombianBoss": "Colombian Boss",
+    "Cop": "Cop",
+    "CopPanic": "Cop (Panic)",
+    "CopPhone": "Cop (Phone)",
+    "CopyClerk": "Copy Clerk",
     "Corey": "Corey",
+    "CSI": "CSI",
+    "Dennis": "Dennis",
+    "Director": "Director",
+    "Father": "Father",
+    "FatSquad": "Fat Squad",
+    "GangLeader": "Gang Leader",
+    "General": "General",
+    "GeneralBlood": "General (Blood)",
+    "GeneralDown": "General (Down)",
+    "GeneralPanther": "General (Panther)",
+    "Girl": "Girl",
+    "GirlAngry": "Girl (Angry)",
+    "Guard": "Guard",
+    "Hammer": "Hammer",
+    "Henchman": "Henchman",
+    "HenchmanGirlfriend": "Henchman's Girlfriend",
+    "Hobo": "Hobo",
+    "Host": "Host",
+    "HostAnxious": "Host (Anxious)",
+    "HostTwitch": "Host (Twitch)",
+    "Inspector": "Inspector",
+    "Jonatan": "Jonatan",
+    "Judge": "Judge",
+    "Lawyer": "Lawyer",
+    "Mark": "Mark",
+    "Nicke": "Nicke",
+    "NickeStore": "Nicke (Store)",
+    "NPC1": "NPC",
+    "Pig": "Pig",
+    "PigAngry": "Pig (Angry)",
+    "PigButcher": "Pig Butcher",
+    "PigMask": "Pig (Mask)",
+    "PigPhone": "Pig (Phone)",
+    "PigPsycho": "Pig (Psycho)",
+    "PigSilent": "Pig (Silent)",
+    "PizzaDude": "Pizza Dude",
+    "Police": "Police",
+    "PoliceChief": "Police Chief",
+    "PoliceInterrogation": "Police (Interrogation)",
+    "PoliceScared": "Police (Scared)",
+    "PrisonBoss": "Prison Boss",
+    "Prosecutor": "Prosecutor",
+    "Rat": "Rat",
+    "RatCassettes": "Rat (Cassettes)",
+    "RatMom": "Rat's Mom",
+    "RatPhone": "Rat (Phone)",
+    "RatShades": "Rat (Shades)",
+    "Richard": "Richard",
+    "Robber": "Robber",
+    "RussianCobra": "Russian Cobra",
+    "RussianParty": "Russian Party",
+    "SaunaGangster": "Sauna Gangster",
+    "Sister": "Sister",
+    "Soldier": "Soldier",
+    "Son": "Son",
+    "SonAngry": "Son (Angry)",
+    "SonGate": "Son (Gate)",
+    "SonGateCover": "Son (Gate Cover)",
+    "SonRobber": "Son (Robber)",
+    "Swan": "Swan",
+    "Swat": "Swat",
+    "SwatBoss": "Swat Boss",
+    "Tattooer": "Tattooer",
+    "Tony": "Tony",
+    "Ventriloquist": "Ventriloquist",
+    "VIPGuard": "VIP Guard",
+    "Waitress": "Waitress",
+    "Writer": "Writer",
+    "WriterWife": "Writer's Wife",
 }
 
 
@@ -101,11 +179,6 @@ class HLM2Widget(Gtk.Window):
             color: #ffffff;
             font-size: 19px;
             font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-        }
-        .hlm2-title {
-            color: #ffffff;
-            font-size: 10px;
         }
         """
         style_provider = Gtk.CssProvider()
@@ -220,10 +293,22 @@ class HLM2Widget(Gtk.Window):
         cr.close_path()
 
         r, g, b = self.current_void_color()
-        cr.set_source_rgba(r, g, b, 0.85)
+        cr.set_source_rgba(r, g, b, 1)
         cr.fill_preserve()
-        cr.set_source_rgba(0, 0, 0, 0.9)
+
+        # Borde negro-blanco-negro: se traza el mismo contorno tres
+        # veces con ancho decreciente, así cada trazo más fino solo
+        # deja ver el "anillo" exterior del anterior.
+        cr.set_line_width(10)
+        cr.set_source_rgba(0, 0, 0, 1)
+        cr.stroke_preserve()
+
+        cr.set_line_width(6)
+        cr.set_source_rgba(1, 1, 1, 1)
+        cr.stroke_preserve()
+
         cr.set_line_width(2)
+        cr.set_source_rgba(0, 0, 0, 1)
         cr.stroke()
 
     def on_draw_sprite(self, widget, cr):
@@ -240,10 +325,10 @@ class HLM2Widget(Gtk.Window):
         # a partir del tamaño real de esta imagen, con un pequeño
         # margen extra para la leve rotación del bamboleo.
         half_diag = (ph / 2) * 1.05
-        pivot_y = min(h / 2, SPRITE_TOP_MARGIN + half_diag)
+        pivot_y = min(h / 2, SPRITE_TOP_MARGIN -10 + half_diag)
 
         cr.save()
-        cr.translate(w / 2, pivot_y)
+        cr.translate((w + 50) / 2, pivot_y)
         cr.rotate(math.radians(angle_deg))
         cr.translate(-pw / 2, -ph / 2)
         Gdk.cairo_set_source_pixbuf(cr, self.current_pixbuf, 0, 0)
