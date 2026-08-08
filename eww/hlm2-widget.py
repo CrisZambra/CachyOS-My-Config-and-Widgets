@@ -14,17 +14,22 @@ LOGO_PATH = "/home/cristopher/.config/eww/hlm2-logo.png"
 
 WIDGET_W = 400
 WIDGET_H = 540
-SPRITE_W = 380
-SPRITE_H = 380
+SPRITE_W = 360
+SPRITE_H = 360
 # Margen mínimo (px) entre el borde superior del lienzo y la cabeza -
 # se calcula la posición dinámicamente por personaje/frame para que
 # quede lo más arriba posible SIN recortarse (antes, un pivote fijo
 # hacía que las cabezas más altas se cortaran por arriba).
-SPRITE_TOP_MARGIN = 5
+SPRITE_TOP_MARGIN = 0
 # Los frames se escalan a este % del área del sprite para dejar espacio
 # a la rotación (a un ángulo bajo como este, casi no hace falta margen).
 SPRITE_SCALE = 0.97
 MAX_ROTATION_DEG = 5.0
+# En el menú de Hotline Miami 1 el logo no solo se inclina de lado a
+# lado, también "respira" (se agranda/achica) como si se moviera hacia
+# adelante y atrás. LOGO_SCALE_PULSE es cuánto varía el tamaño (0.05 =
+# +-5%).
+LOGO_SCALE_PULSE = 0.05
 
 # El "Neon Void" de Hotline Miami: el fondo detrás de los retratos que
 # hablan cicla de color constantemente. El juego lo tiene hardcodeado
@@ -136,7 +141,7 @@ class HLM2Widget(Gtk.Window):
         if os.path.exists(LOGO_PATH):
             logo_pixbuf = GdkPixbuf.Pixbuf.new_from_file(LOGO_PATH)
             lw, lh = logo_pixbuf.get_width(), logo_pixbuf.get_height()
-            nw = int((WIDGET_W - 16) * 0.9)
+            nw = int((WIDGET_W - 10) * 0.9)
             nh = int(lh * nw / lw)
             self.logo_pixbuf = logo_pixbuf.scale_simple(nw, nh, GdkPixbuf.InterpType.BILINEAR)
 
@@ -208,14 +213,16 @@ class HLM2Widget(Gtk.Window):
         if not self.logo_pixbuf:
             return
         angle_deg = math.sin(self.rotation_phase) * MAX_ROTATION_DEG
+        scale = 1.0 + math.cos(self.rotation_phase) * LOGO_SCALE_PULSE
         w = widget.get_allocated_width()
         h = widget.get_allocated_height()
         lw = self.logo_pixbuf.get_width()
         lh = self.logo_pixbuf.get_height()
 
         cr.save()
-        cr.translate(w / 2, h / 2)
+        cr.translate((w - 60) / 2, h / 2)
         cr.rotate(math.radians(angle_deg))
+        cr.scale(scale, scale)
         cr.translate(-lw / 2, -lh / 2)
         Gdk.cairo_set_source_pixbuf(cr, self.logo_pixbuf, 0, 0)
         cr.paint()
@@ -285,7 +292,7 @@ class HLM2Widget(Gtk.Window):
         pivot_y = min(h / 2, SPRITE_TOP_MARGIN -10 + half_diag)
 
         cr.save()
-        cr.translate((w + 10) / 2, pivot_y)
+        cr.translate((w - 30) / 2, pivot_y)
         cr.rotate(math.radians(angle_deg))
         cr.translate(-pw / 2, -ph / 2)
         Gdk.cairo_set_source_pixbuf(cr, self.current_pixbuf, 0, 0)

@@ -8,7 +8,7 @@
 # ============================================================
 
 WIDGETS=(
-    # "/home/cristopher/.config/eww/doom-widget.py"  # desactivado temporalmente mientras se depura HLM2
+    "/home/cristopher/.config/eww/doom-widget.py"
     "/home/cristopher/.config/eww/hlm2-widget.py"
 )
 
