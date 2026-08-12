@@ -22,12 +22,14 @@ No es un instalador "un click": son mis dotfiles reales, documentados para que l
 - **Matrix Rain** (`matrix-window.py`): ventana GTK3 + `gtk-layer-shell` en capa `BOTTOM` (detrás de todas las ventanas), lluvia de caracteres estilo Matrix, corre a ~15fps por consumo de CPU.
 - **DOOM widget** (`doom-widget.py`, `doom-assets/`): sprites de enemigos de DOOM rotando en 360°, cambian de enemigo cada 6s.
 - **Hotline Miami 2 widget** (`hlm2-widget.py`, `hlm2-assets/`): cabezas animadas de los ~87 personajes con diálogo del juego, con la animación de "hablar" y un balanceo rotatorio leve tipo bobble-head; cambia de personaje cada 6s. El fondo es un panel con la forma y el ciclo de color (aproximado) del "Neon Void" del juego.
-- **Selector de widget** (`widget-selector.sh`): en vez de arrancar siempre el mismo, elige al azar entre DOOM y Hotline Miami 2 cada vez que inicia sesión Hyprland (ver `hyprland.conf`, que llama a este script en el `exec-once` en vez de lanzar un widget fijo).
+- **Hades widget** (`hades-widget.py`, `hades-assets/`): retrato de diálogo por defecto de ~30 personajes del juego (Zagreus, Hades, Perséfone, Nyx, los Olímpicos, etc.), encerrado en un marco dorado más angosto que la propia ilustración a propósito, para que las partes del personaje que sobresalen del torso (manos, arma, pelo) rompan visualmente el marco. Sin animación de balanceo (a diferencia de Hotline Miami 2). Cambia de personaje cada 6s.
+- **Selector de widget** (`widget-selector.sh`): en vez de arrancar siempre el mismo, elige al azar entre DOOM, Hotline Miami 2 y Hades cada vez que inicia sesión Hyprland (ver `hyprland.conf`, que llama a este script en el `exec-once` en vez de lanzar un widget fijo).
 
 ## Importante: qué NO incluye este repo (y por qué)
 
 - **Sprites de DOOM extraídos ni `doom-logo.png`**: son assets con copyright de id Software. En vez de eso incluyo `eww/doom-assets/extract-sprites.sh`, que los extrae de **tu propia copia legal** de `DOOM.WAD`/`DOOM2.WAD` con `deutex`. Sin sprites, el widget muestra el texto "-- DOOM --" en vez del logo (no rompe nada).
 - **Sprites de Hotline Miami 2 extraídos ni `hlm2-logo.png`**: son assets con copyright de Dennaton Games / Devolver Digital. En vez de eso incluyo `eww/hlm2-assets/extract-faces.py`, que los extrae directamente de **tu propia copia instalada del juego** (`hlm2_data_desktop.wad`, formato propietario "AGAR" reverse-engineered para este script — no distribuye nada del juego, solo lo lee). Sin `hlm2-logo.png`, el widget muestra el texto "-- HOTLINE MIAMI 2 --" en vez del logo.
+- **Retratos de Hades extraídos ni `hades-logo.png`**: son assets con copyright de Supergiant Games. En vez de eso incluyo `eww/hades-assets/extract-portraits.py`, que los extrae de **tu propia copia instalada del juego** (`GUI.pkg`) usando [deppth2](https://github.com/SGG-Modding/deppth), la herramienta de la comunidad de modding de Supergiant Games. Sin `hades-logo.png`, el widget muestra el texto "-- HADES --" en vez del logo.
 - **El pack de cursores de Windows** (origen de `MyCursor`): tampoco se redistribuye por licencia. `setup-cursor.sh` espera un pack `.cur`/`.ani` propio en la carpeta que definas en `SOURCE_DIR`.
 
 ## Dependencias
@@ -92,14 +94,23 @@ deutex              # extrae sprites de WADs de DOOM
    ```
    Opcional: coloca tu propio `hlm2-logo.png` en `~/.config/eww/` si quieres el logo en vez del texto "-- HOTLINE MIAMI 2 --".
 
-6. **Canción del día**: genera la lista desde tus playlists `.m3u8`:
+6. **Hades widget**: extrae los retratos desde tu propia instalación del juego (Steam). Necesita el paquete `deppth2` (instala `pillow` y `lz4` como dependencias):
+   ```bash
+   pip install --user deppth2 pillow lz4   # o dentro de un venv propio
+   python3 ~/.config/eww/hades-assets/extract-portraits.py \
+     "$HOME/.local/share/Steam/steamapps/common/Hades/Content/Win/Packages/GUI.pkg" \
+     ~/.config/eww/hades-assets/portraits
+   ```
+   Opcional: coloca tu propio `hades-logo.png` en `~/.config/eww/` si quieres el logo en vez del texto "-- HADES --".
+
+7. **Canción del día**: genera la lista desde tus playlists `.m3u8`:
    ```bash
    bash ~/.config/eww/clean_playlist.sh /ruta/a/tus/playlists/
    ```
 
-7. **Wallpapers**: coloca tus fondos en `~/Pictures/4k/` (o cambia `WALLPAPER_DIR` en `wallpaper-cycle.sh`).
+8. **Wallpapers**: coloca tus fondos en `~/Pictures/4k/` (o cambia `WALLPAPER_DIR` en `wallpaper-cycle.sh`).
 
-8. Recarga Hyprland:
+9. Recarga Hyprland:
    ```bash
    hyprctl reload
    ```

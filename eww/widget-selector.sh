@@ -10,6 +10,7 @@
 WIDGETS=(
     "/home/cristopher/.config/eww/doom-widget.py"
     "/home/cristopher/.config/eww/hlm2-widget.py"
+    "/home/cristopher/.config/eww/hades-widget.py"
 )
 
 CHOSEN="${WIDGETS[$RANDOM % ${#WIDGETS[@]}]}"
