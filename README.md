@@ -22,7 +22,7 @@ No es un instalador "un click": son mis dotfiles reales, documentados para que l
 - **Matrix Rain** (`matrix-window.py`): ventana GTK3 + `gtk-layer-shell` en capa `BOTTOM` (detrás de todas las ventanas), lluvia de caracteres estilo Matrix, corre a ~15fps por consumo de CPU.
 - **DOOM widget** (`doom-widget.py`, `doom-assets/`): sprites de enemigos de DOOM rotando en 360°, cambian de enemigo cada 6s.
 - **Hotline Miami 2 widget** (`hlm2-widget.py`, `hlm2-assets/`): cabezas animadas de los ~87 personajes con diálogo del juego, con la animación de "hablar" y un balanceo rotatorio leve tipo bobble-head; cambia de personaje cada 6s. El fondo es un panel con la forma y el ciclo de color (aproximado) del "Neon Void" del juego.
-- **Hades widget** (`hades-widget.py`, `hades-assets/`): retrato de diálogo por defecto de ~30 personajes del juego (Zagreus, Hades, Perséfone, Nyx, los Olímpicos, etc.), todos normalizados a la misma escala de cuerpo (los PNG extraídos vienen con tamaños/proporciones muy dispares entre sí) y encerrados en un marco dorado. Izquierda, derecha y abajo son límites duros (nada del retrato se dibuja más allá de esas tres líneas); arriba se deja libre a propósito para que cabeza/pelo/arma puedan sobresalir, y ahí mismo se pinta el logo del juego encima, componiendo por alfa en vez de recortar en línea recta. Sin animación de balanceo (a diferencia de Hotline Miami 2). Cambia de personaje cada 6s.
+- **Hades widget** (`hades-widget.py`, `hades-assets/`): retrato de diálogo por defecto de ~30 personajes del juego, con sus nombres traducidos al español (Zagreo, Perséfone, Nix, Cerbero, Deméter, etc. - salvo un par de apodos propios del juego como "Bouldy"/"Skelly", sin equivalente mitológico), todos normalizados a la misma escala de cuerpo (los PNG extraídos vienen con tamaños/proporciones muy dispares entre sí) y encerrados en un marco dorado. Izquierda, derecha y abajo son límites duros (nada del retrato se dibuja más allá de esas tres líneas); arriba se deja libre a propósito para que cabeza/pelo/arma puedan sobresalir, y ahí mismo se pinta el logo del juego encima, componiendo por alfa en vez de recortar en línea recta. El nombre se dibuja con Pango/Cairo (no un `Gtk.Label`) centrado entre esa línea del marco y el borde exterior del panel, en tipografía Cinzel si está instalada (si no, cae al font por defecto del sistema). Sin animación de balanceo (a diferencia de Hotline Miami 2). Cambia de personaje cada 6s.
 - **Selector de widget** (`widget-selector.sh`): en vez de arrancar siempre el mismo, elige al azar entre DOOM, Hotline Miami 2 y Hades cada vez que inicia sesión Hyprland (ver `hyprland.conf`, que llama a este script en el `exec-once` en vez de lanzar un widget fijo).
 - **`start-widget-individually.sh`**: referencia de los comandos para levantar cada widget de personaje por separado (sin pasar por el selector aleatorio), útil para depurar uno en particular.
 
@@ -101,6 +101,13 @@ deutex              # extrae sprites de WADs de DOOM
    python3 ~/.config/eww/hades-assets/extract-portraits.py \
      "$HOME/.local/share/Steam/steamapps/common/Hades/Content/Win/Packages/GUI.pkg" \
      ~/.config/eww/hades-assets/portraits
+   ```
+   Opcional: el nombre del personaje usa la tipografía [Cinzel](https://fonts.google.com/specimen/Cinzel) si está instalada en el sistema (si no, Pango cae automáticamente al font por defecto). Para instalarla sin bajar el paquete completo de Google Fonts:
+   ```bash
+   mkdir -p ~/.local/share/fonts/Cinzel
+   curl -sL -o ~/.local/share/fonts/Cinzel/Cinzel-Variable.ttf \
+     "https://raw.githubusercontent.com/google/fonts/main/ofl/cinzel/Cinzel%5Bwght%5D.ttf"
+   fc-cache -f ~/.local/share/fonts/Cinzel
    ```
    Opcional: coloca tu propio `hades-logo.png` en `~/.config/eww/` si quieres el logo en vez del texto "-- HADES --".
 

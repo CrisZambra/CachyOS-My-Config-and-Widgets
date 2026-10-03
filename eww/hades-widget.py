@@ -6,13 +6,19 @@ import random
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
 gi.require_version('GtkLayerShell', '0.1')
-from gi.repository import Gtk, Gdk, GLib, GtkLayerShell, GdkPixbuf
+gi.require_version('PangoCairo', '1.0')
+from gi.repository import Gtk, Gdk, GLib, GtkLayerShell, GdkPixbuf, Pango, PangoCairo
 
 PORTRAITS_DIR = "/home/cristopher/.config/eww/hades-assets/portraits"
 LOGO_PATH = "/home/cristopher/.config/eww/hades-logo.png"
 
-WIDGET_W = 520
-WIDGET_H = 680
+WIDGET_W = 504
+WIDGET_H = 655
+# El logo ya se afinó a mano (tamaño/posición) con el ancho de widget
+# que había en ese momento (520). Se guarda ese valor aparte y no
+# WIDGET_W, para que si el widget se achica/agranda después el logo no
+# cambie de tamaño solo - sigue la referencia con la que se ajustó.
+LOGO_REF_W = 520
 SPRITE_W = 480
 SPRITE_H = 420
 SPRITE_SCALE = 0.97
@@ -30,38 +36,40 @@ FRAME_LINE_WIDTH = 3
 BG_COLOR = (0.07, 0.03, 0.03)
 GOLD = (0.78, 0.62, 0.28)
 BLOOD_RED = (0.45, 0.05, 0.05)
+NAME_COLOR = (0.910, 0.757, 0.439)
+NAME_FONT = "Cinzel Bold 34"
 
 CHARACTERS = {
-    "Zagreus": "Zagreus",
+    "Zagreus": "Zagreo",
     "Hades": "Hades",
-    "Persephone": "Persephone",
-    "Nyx": "Nyx",
-    "Achilles": "Achilles",
+    "Persephone": "Perséfone",
+    "Nyx": "Nix",
+    "Achilles": "Aquiles",
     "Alecto": "Alecto",
-    "Aphrodite": "Aphrodite",
+    "Aphrodite": "Afrodita",
     "Ares": "Ares",
-    "Artemis": "Artemis",
-    "Athena": "Athena",
+    "Artemis": "Artemisa",
+    "Athena": "Atenea",
     "Bouldy": "Bouldy",
-    "Cerberus": "Cerberus",
-    "Chaos": "Chaos",
-    "Charon": "Charon",
-    "Demeter": "Demeter",
-    "Dionysus": "Dionysus",
-    "Eurydice": "Eurydice",
+    "Cerberus": "Cerbero",
+    "Chaos": "Caos",
+    "Charon": "Caronte",
+    "Demeter": "Deméter",
+    "Dionysus": "Dioniso",
+    "Eurydice": "Eurídice",
     "Hermes": "Hermes",
-    "Hypnos": "Hypnos",
+    "Hypnos": "Hipnos",
     "Medusa": "Medusa",
-    "Megaera": "Megaera",
-    "Minotaur": "Minotaur",
-    "Orpheus": "Orpheus",
-    "Patroclus": "Patroclus",
-    "Poseidon": "Poseidon",
-    "Sisyphus": "Sisyphus",
+    "Megaera": "Megera",
+    "Minotaur": "Minotauro",
+    "Orpheus": "Orfeo",
+    "Patroclus": "Patroclo",
+    "Poseidon": "Poseidón",
+    "Sisyphus": "Sísifo",
     "Skelly": "Skelly",
-    "Thanatos": "Thanatos",
-    "Theseus": "Theseus",
-    "Tisiphone": "Tisiphone",
+    "Thanatos": "Tánatos",
+    "Theseus": "Teseo",
+    "Tisiphone": "Tisífone",
     "Zeus": "Zeus",
 }
 
@@ -115,9 +123,9 @@ class HadesWidget(Gtk.Window):
         GtkLayerShell.init_for_window(self)
         GtkLayerShell.set_layer(self, GtkLayerShell.Layer.BOTTOM)
         GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.RIGHT, True)
-        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.BOTTOM, True)
+        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.TOP, True)
         GtkLayerShell.set_margin(self, GtkLayerShell.Edge.RIGHT, 20)
-        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, 20)
+        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.TOP, 20)
         GtkLayerShell.set_exclusive_zone(self, -1)
 
         screen = self.get_screen()
@@ -128,7 +136,8 @@ class HadesWidget(Gtk.Window):
         css = b"""
         .hades-label {
             color: #e8c170;
-            font-size: 19px;
+            font-family: "Cinzel";
+            font-size: 24px;
             font-weight: bold;
         }
         """
@@ -148,10 +157,10 @@ class HadesWidget(Gtk.Window):
         overlay.add(self.bg_area)
 
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        outer.set_margin_top(10)
-        outer.set_margin_bottom(10)
-        outer.set_margin_start(10)
-        outer.set_margin_end(10)
+        outer.set_margin_top(6)
+        outer.set_margin_bottom(6)
+        outer.set_margin_start(8)
+        outer.set_margin_end(8)
         overlay.add_overlay(outer)
 
         # El logo y el retrato ya NO van en cajas separadas apiladas: al
@@ -168,8 +177,8 @@ class HadesWidget(Gtk.Window):
         if os.path.exists(LOGO_PATH):
             logo_pixbuf = GdkPixbuf.Pixbuf.new_from_file(LOGO_PATH)
             lw, lh = logo_pixbuf.get_width(), logo_pixbuf.get_height()
-            nw = int((WIDGET_W - 30) * 0.9)
-            nh = int(lh * nw / lw)
+            nw = int((LOGO_REF_W - 40) * 0.9)
+            nh = int((lh - 30) * nw / lw)
             self.logo_pixbuf = logo_pixbuf.scale_simple(nw, nh, GdkPixbuf.InterpType.BILINEAR)
             self.top_headroom = nh + 12
         else:
@@ -180,16 +189,22 @@ class HadesWidget(Gtk.Window):
         content_h = SPRITE_H + self.top_headroom
         self.image_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         self.image_box.set_size_request(SPRITE_W, content_h)
-        outer.pack_start(self.image_box, False, False, 4)
+        outer.pack_start(self.image_box, False, False, 2)
 
         self.sprite_area = Gtk.DrawingArea()
         self.sprite_area.set_size_request(SPRITE_W, content_h)
         self.sprite_area.connect('draw', self.on_draw_sprite)
         self.image_box.set_center_widget(self.sprite_area)
 
-        self.label = Gtk.Label()
-        self.label.get_style_context().add_class("hades-label")
-        outer.pack_start(self.label, False, False, 2)
+        # El nombre YA NO es un Gtk.Label metido en la caja vertical: GTK
+        # solo "ve" el sprite_area como un bloque opaco de altura fija y
+        # arranca el nombre justo debajo de él, mucho más cerca del
+        # borde exterior que de la línea del marco interior (que está
+        # FRAME_MARGIN_Y más arriba, DENTRO de ese bloque). Para
+        # centrarlo de verdad entre ambas líneas se dibuja con Pango
+        # directo sobre bg_area (que sí conoce la ventana completa), en
+        # on_draw_bg, usando la posición real del sprite_area.
+        self.current_name = ""
 
         self.char_keys = [k for k in CHARACTERS
                            if count_frames(os.path.join(PORTRAITS_DIR, k)) > 0]
@@ -229,6 +244,26 @@ class HadesWidget(Gtk.Window):
         r, g, b = GOLD
         cr.set_source_rgba(r, g, b, 1)
         cr.stroke()
+
+        if self.current_name:
+            # Línea inferior del marco interior, en coordenadas de esta
+            # ventana completa: la posición real del sprite_area (según
+            # lo asignó GTK) más lo mismo que usa on_draw_sprite para
+            # ubicar esa línea dentro de su propio lienzo.
+            sprite_alloc = self.sprite_area.get_allocation()
+            inner_frame_bottom = sprite_alloc.y + (sprite_alloc.height - FRAME_MARGIN_Y)
+            outer_frame_bottom = h - margin
+            band_center_y = (inner_frame_bottom + outer_frame_bottom) / 2
+
+            layout = PangoCairo.create_layout(cr)
+            layout.set_font_description(Pango.FontDescription(NAME_FONT))
+            layout.set_text(self.current_name, -1)
+            text_w, text_h = layout.get_pixel_size()
+
+            r, g, b = NAME_COLOR
+            cr.set_source_rgba(r, g, b, 1)
+            cr.move_to((w - text_w) / 2, band_center_y - text_h / 2)
+            PangoCairo.show_layout(cr, layout)
 
     def on_draw_sprite(self, widget, cr):
         w = widget.get_allocated_width()
@@ -299,7 +334,8 @@ class HadesWidget(Gtk.Window):
         else:
             print(f"[NOT FOUND] char={char_key}")
 
-        self.label.set_text(CHARACTERS[char_key])
+        self.current_name = CHARACTERS[char_key]
+        self.bg_area.queue_draw()
 
 
 win = HadesWidget()
