@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import gi
+import json
 import os
 import random
 
@@ -11,6 +12,11 @@ from gi.repository import Gtk, Gdk, GLib, GtkLayerShell, GdkPixbuf, Pango, Pango
 
 PORTRAITS_DIR = "/home/cristopher/.config/eww/hades-assets/portraits"
 LOGO_PATH = "/home/cristopher/.config/eww/hades-logo.png"
+# Ajustes manuales por personaje (escala/posición), generados con
+# hades-assets/tune-character.py. Si el archivo no existe, o un
+# personaje no tiene entrada, se usa el comportamiento normal
+# (scale=1.0, offset_x=0, offset_y=0) sin ningún cambio.
+OVERRIDES_PATH = "/home/cristopher/.config/eww/hades-assets/character-overrides.json"
 
 WIDGET_W = 504
 WIDGET_H = 655
@@ -80,6 +86,17 @@ def count_frames(char_dir):
     return len([f for f in os.listdir(char_dir) if f.startswith("frame") and f.endswith(".png")])
 
 
+def load_overrides():
+    if not os.path.exists(OVERRIDES_PATH):
+        return {}
+    try:
+        with open(OVERRIDES_PATH) as f:
+            return json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        print(f"[overrides] no se pudo leer {OVERRIDES_PATH}: {e}")
+        return {}
+
+
 def load_frame(char_dir, index, target_h, max_w):
     # Los PNG extraídos del juego vienen recortados cada uno a su propio
     # contenido, con tamaños y proporciones muy dispares entre personajes
@@ -110,6 +127,43 @@ def load_frame(char_dir, index, target_h, max_w):
         pixbuf = pixbuf.new_subpixbuf(crop_x, 0, max_w, nh)
 
     return pixbuf
+
+
+def draw_frame_and_portrait(cr, w, h, top_headroom, pixbuf, offset_x, offset_y, logo_pixbuf=None):
+    # Lógica de dibujo compartida entre el widget real (HadesWidget.on_draw_sprite)
+    # y hades-assets/tune-character.py, para que la herramienta de ajuste
+    # muestre EXACTAMENTE lo mismo que se ve en el escritorio.
+    frame_top = top_headroom + FRAME_MARGIN_Y
+
+    cr.rectangle(FRAME_MARGIN_X, frame_top,
+                 w - FRAME_MARGIN_X * 2, h - frame_top - FRAME_MARGIN_Y)
+    cr.set_line_width(FRAME_LINE_WIDTH)
+    r, g, b = GOLD
+    cr.set_source_rgba(r, g, b, 1)
+    cr.stroke()
+
+    if pixbuf:
+        pw = pixbuf.get_width()
+        ph = pixbuf.get_height()
+
+        cr.save()
+        half_line = FRAME_LINE_WIDTH / 2
+        cr.rectangle(FRAME_MARGIN_X - half_line, 0,
+                     w - FRAME_MARGIN_X * 2 + half_line * 2,
+                     h - FRAME_MARGIN_Y + half_line)
+        cr.clip()
+
+        x = (w - pw) / 2 + offset_x
+        y = (h - FRAME_MARGIN_Y) - ph + offset_y
+        cr.translate(x, y)
+        Gdk.cairo_set_source_pixbuf(cr, pixbuf, 0, 0)
+        cr.paint()
+        cr.restore()
+
+    if logo_pixbuf:
+        lw = logo_pixbuf.get_width()
+        Gdk.cairo_set_source_pixbuf(cr, logo_pixbuf, (w - lw) / 2, 0)
+        cr.paint()
 
 
 class HadesWidget(Gtk.Window):
@@ -206,11 +260,14 @@ class HadesWidget(Gtk.Window):
         # on_draw_bg, usando la posición real del sprite_area.
         self.current_name = ""
 
+        self.overrides = load_overrides()
+
         self.char_keys = [k for k in CHARACTERS
                            if count_frames(os.path.join(PORTRAITS_DIR, k)) > 0]
-        random.shuffle(self.char_keys)
-        self.current_char_idx = 0
+        self.current_char_idx = random.randrange(len(self.char_keys))
         self.current_pixbuf = None
+        self.offset_x = 0
+        self.offset_y = 0
 
         GLib.timeout_add(6000, self.next_character)
 
@@ -218,7 +275,16 @@ class HadesWidget(Gtk.Window):
         self.show_all()
 
     def next_character(self):
-        self.current_char_idx = (self.current_char_idx + 1) % len(self.char_keys)
+        # random.choice puro en vez de recorrer una lista barajada una
+        # sola vez al inicio: con la lista barajada, después de la
+        # primera vuelta completa el orden se repetía siempre igual -
+        # esto elige un personaje al azar cada vez (evitando repetir el
+        # mismo dos veces seguidas, para que siempre se note el cambio).
+        if len(self.char_keys) > 1:
+            new_idx = random.randrange(len(self.char_keys))
+            while new_idx == self.current_char_idx:
+                new_idx = random.randrange(len(self.char_keys))
+            self.current_char_idx = new_idx
         self.update_portrait()
         return True
 
@@ -268,68 +334,29 @@ class HadesWidget(Gtk.Window):
     def on_draw_sprite(self, widget, cr):
         w = widget.get_allocated_width()
         h = widget.get_allocated_height()
-
-        # El marco arranca "top_headroom" más abajo que el lienzo (ese
-        # hueco es donde vive el logo, ver más abajo) para que la
-        # posición/tamaño del marco no cambie aunque el lienzo ahora sea
-        # más alto para darle sitio al logo.
-        frame_top = self.top_headroom + FRAME_MARGIN_Y
-
-        # El marco se dibuja primero, más angosto que el lienzo, para
-        # que el retrato (pintado encima) tape el trazo donde lo cubre
-        # y deje el resto del trazo visible - así el personaje se ve
-        # "salir" del cuadro en vez de quedar recortado por él.
-        cr.rectangle(FRAME_MARGIN_X, frame_top,
-                     w - FRAME_MARGIN_X * 2, h - frame_top - FRAME_MARGIN_Y)
-        cr.set_line_width(FRAME_LINE_WIDTH)
-        r, g, b = GOLD
-        cr.set_source_rgba(r, g, b, 1)
-        cr.stroke()
-
-        if self.current_pixbuf:
-            pw = self.current_pixbuf.get_width()
-            ph = self.current_pixbuf.get_height()
-
-            # Todos los retratos terminan (pies) en el mismo punto
-            # vertical en vez de centrarse cada uno según su propio alto
-            # - así no "flotan" a alturas distintas por tener recortes
-            # dispares. Ese punto coincide con la línea inferior del
-            # marco.
-            cr.save()
-
-            # Izquierda, derecha y abajo son límites duros: nada del
-            # retrato se dibuja más allá de esas tres líneas del marco.
-            # Arriba se deja sin recortar (solo lo limita el borde
-            # superior del lienzo, mucho más arriba ahora gracias al
-            # hueco del logo) para que la cabeza/pelo pueda seguir
-            # saliendo - lo que sobresalga por ahí queda debajo del
-            # logo, que se pinta encima al final con su propio alfa en
-            # vez de un corte recto.
-            half_line = FRAME_LINE_WIDTH / 2
-            cr.rectangle(FRAME_MARGIN_X - half_line, 0,
-                         w - FRAME_MARGIN_X * 2 + half_line * 2,
-                         h - FRAME_MARGIN_Y + half_line)
-            cr.clip()
-
-            x = (w - pw) / 2
-            y = (h - FRAME_MARGIN_Y) - ph
-            cr.translate(x, y)
-            Gdk.cairo_set_source_pixbuf(cr, self.current_pixbuf, 0, 0)
-            cr.paint()
-            cr.restore()
-
-        if self.logo_pixbuf:
-            lw = self.logo_pixbuf.get_width()
-            Gdk.cairo_set_source_pixbuf(cr, self.logo_pixbuf, (w - lw) / 2, 0)
-            cr.paint()
+        draw_frame_and_portrait(cr, w, h, self.top_headroom, self.current_pixbuf,
+                                 self.offset_x, self.offset_y, self.logo_pixbuf)
 
     def update_portrait(self):
         char_key = self.char_keys[self.current_char_idx]
         char_dir = os.path.join(PORTRAITS_DIR, char_key)
+        override = self.overrides.get(char_key, {})
 
         pixbuf = load_frame(char_dir, 0, SPRITE_H * SPRITE_SCALE, SPRITE_W * SPRITE_SCALE)
         if pixbuf:
+            # Ajuste manual opcional (ver hades-assets/tune-character.py):
+            # escala extra encima de la normalización automática, y
+            # desplazamiento en píxeles desde la posición por defecto
+            # (centrado horizontal, pies en la línea del marco).
+            extra_scale = override.get("scale", 1.0)
+            if extra_scale != 1.0:
+                pw, ph = pixbuf.get_width(), pixbuf.get_height()
+                nw = max(1, int(pw * extra_scale))
+                nh = max(1, int(ph * extra_scale))
+                pixbuf = pixbuf.scale_simple(nw, nh, GdkPixbuf.InterpType.BILINEAR)
             self.current_pixbuf = pixbuf
+            self.offset_x = override.get("offset_x", 0)
+            self.offset_y = override.get("offset_y", 0)
             self.sprite_area.queue_draw()
         else:
             print(f"[NOT FOUND] char={char_key}")
@@ -338,6 +365,7 @@ class HadesWidget(Gtk.Window):
         self.bg_area.queue_draw()
 
 
-win = HadesWidget()
-win.connect('destroy', Gtk.main_quit)
-Gtk.main()
+if __name__ == "__main__":
+    win = HadesWidget()
+    win.connect('destroy', Gtk.main_quit)
+    Gtk.main()
