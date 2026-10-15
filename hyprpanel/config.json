@@ -39,5 +39,12 @@
   "menus.dashboard.shortcuts.left.shortcut1.command": "steam",
   "menus.dashboard.shortcuts.left.shortcut4.icon": "",
   "menus.dashboard.shortcuts.left.shortcut4.tooltip": "Brave",
-  "menus.dashboard.shortcuts.left.shortcut4.command": "brave"
+  "menus.dashboard.shortcuts.left.shortcut4.command": "brave",
+  "theme.font.size": "1.2rem",
+  "menus.dashboard.shortcuts.left.shortcut3.icon": "",
+  "menus.dashboard.shortcuts.left.shortcut3.tooltip": "Cerrar widgets de fondo",
+  "menus.dashboard.shortcuts.left.shortcut3.command": "bash /home/cristopher/.config/eww/widgets-ctl.sh close",
+  "menus.dashboard.shortcuts.right.shortcut1.icon": "",
+  "menus.dashboard.shortcuts.right.shortcut1.tooltip": "Abrir widgets de fondo",
+  "menus.dashboard.shortcuts.right.shortcut1.command": "bash /home/cristopher/.config/eww/widgets-ctl.sh open"
 }
