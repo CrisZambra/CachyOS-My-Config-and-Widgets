@@ -27,8 +27,6 @@ No es un instalador "un click": son mis dotfiles reales, documentados para que l
 - **`start-widget-individually.sh`**: referencia de los comandos para levantar cada widget de personaje por separado (sin pasar por el selector aleatorio), útil para depurar uno en particular.
 - **`widgets-ctl.sh close|open`**: cerrar o volver a abrir Matrix Rain + el widget de personaje activo sin reiniciar la sesión de Hyprland (`open` nunca duplica: comprueba con `pgrep` antes de lanzar cada uno). HyprPanel tiene botones para esto en el dashboard (ver `hyprpanel/config.json`).
 - **`hades-assets/tune-character.py`**: herramienta interactiva (vista previa idéntica al widget real, misma función de dibujo reutilizada) para ajustar a mano, personaje por personaje, la escala y posición del retrato dentro del marco - para los casos donde la normalización automática igual queda desproporcionada. Guarda los ajustes en `hades-assets/character-overrides.json`, que `hades-widget.py` lee al arrancar (personajes sin entrada ahí se comportan igual que siempre).
-- **Guilty Gear XX Accent Core Plus R widget** (`ggxx-widget.py`, `ggxx-assets/`): a diferencia de los demás, **no** es decorativo/pasivo - reacciona a teclado y mouse. Muestra a Sol Badguy quieto hasta que se presiona una tecla (`A`=Golpe, `W`=Patada, `E`=Slash, `F`=Heavy Slash, `X`=Dust, `G`=Burst, click derecho=Golpe), momento en el que reproduce una secuencia corta de varios sprites consecutivos del juego (no un sprite fijo) y vuelve solo a la pose de reposo. Por diseño **solo toma foco de teclado cuando no hay ninguna ventana en primer plano** (sondea `hyprctl activewindow` cada 1s) para no robarle teclas a un juego o al editor - mientras algo esté enfocado, el widget queda inerte. **Importante:** no existe ninguna tabla pública que diga qué sprite del archivo del personaje corresponde a cada movimiento real del juego (ni la wiki de modding de la comunidad ni el mod de frame-data más avanzado la publican) - las secuencias de cada tecla se eligieron a mano por parecido visual, no son necesariamente las animaciones exactas de Golpe/Patada/etc. del juego real. **No** está en `widget-selector.sh` (es standalone, se lanza aparte) y por ahora solo tiene a Sol Badguy.
-- **`ggxx-assets/extract-character.py`**: desencripta y descomprime TODOS los sprites (con la paleta por defecto) de un personaje de GGXXAC+R directo desde `Resource/obj/<código>.bin` de tu propia instalación. El formato (cifrado Mersenne Twister, contenedor, compresión LZ-ish, paletas con su propio header de 16 bytes) no está documentado oficialmente - es un port a Python de [saltern/ggpr_bin](https://github.com/saltern/ggpr_bin), la librería Rust detrás de GearStudio, la herramienta de modding de la comunidad para este juego.
 
 ## Importante: qué NO incluye este repo (y por qué)
 
@@ -36,7 +34,6 @@ No es un instalador "un click": son mis dotfiles reales, documentados para que l
 - **Sprites de Hotline Miami 2 extraídos ni `hlm2-logo.png`**: son assets con copyright de Dennaton Games / Devolver Digital. En vez de eso incluyo `eww/hlm2-assets/extract-faces.py`, que los extrae directamente de **tu propia copia instalada del juego** (`hlm2_data_desktop.wad`, formato propietario "AGAR" reverse-engineered para este script — no distribuye nada del juego, solo lo lee). Sin `hlm2-logo.png`, el widget muestra el texto "-- HOTLINE MIAMI 2 --" en vez del logo.
 - **Retratos de Hades extraídos ni `hades-logo.png`**: son assets con copyright de Supergiant Games. En vez de eso incluyo `eww/hades-assets/extract-portraits.py`, que los extrae de **tu propia copia instalada del juego** (`GUI.pkg`) usando [deppth2](https://github.com/SGG-Modding/deppth), la herramienta de la comunidad de modding de Supergiant Games. Sin `hades-logo.png`, el widget muestra el texto "-- HADES --" en vez del logo.
 - **El pack de cursores de Windows** (origen de `MyCursor`): tampoco se redistribuye por licencia. `setup-cursor.sh` espera un pack `.cur`/`.ani` propio en la carpeta que definas en `SOURCE_DIR`.
-- **Sprites de Guilty Gear XX Accent Core Plus R extraídos**: son assets con copyright de Arc System Works. En vez de eso incluyo `eww/ggxx-assets/extract-character.py`, que los extrae de **tu propia copia instalada del juego** (`Resource/obj/sl.bin` para Sol Badguy; otros personajes tienen su propio código de dos letras en esa carpeta).
 
 ## Dependencias
 
@@ -116,21 +113,12 @@ deutex              # extrae sprites de WADs de DOOM
    ```
    Opcional: coloca tu propio `hades-logo.png` en `~/.config/eww/` si quieres el logo en vez del texto "-- HADES --".
 
-7. **Guilty Gear XX Accent Core Plus R widget**: extrae a Sol Badguy desde tu propia instalación del juego (Steam). Necesita Pillow:
-   ```bash
-   pip install --user pillow   # o dentro de un venv propio
-   python3 ~/.config/eww/ggxx-assets/extract-character.py \
-     "$HOME/.local/share/Steam/steamapps/common/Guilty Gear XX Accent Core Plus R/Resource/obj/sl.bin" \
-     ~/Documents/ggxx-sprites/Sol
-   ```
-   Esto saca los ~564 sprites numerados del personaje; el widget espera además que copies/renombres manualmente los que uses a `~/.config/eww/ggxx-assets/sol/` (`idle.png` más las secuencias `punch_00.png, punch_01.png, ...` por cada tecla - ver los nombres y cantidades de frames en `KEY_BINDINGS` dentro de `ggxx-widget.py`). Es standalone, no se auto-inicia: `python3 ~/.config/eww/ggxx-widget.py`.
-
-8. **Canción del día**: genera la lista desde tus playlists `.m3u8`:
+7. **Canción del día**: genera la lista desde tus playlists `.m3u8`:
    ```bash
    bash ~/.config/eww/clean_playlist.sh /ruta/a/tus/playlists/
    ```
 
-9. **Wallpapers**: coloca tus fondos en `~/Pictures/4k/` (o cambia `WALLPAPER_DIR` en `wallpaper-cycle.sh`).
+8. **Wallpapers**: coloca tus fondos en `~/Pictures/4k/` (o cambia `WALLPAPER_DIR` en `wallpaper-cycle.sh`).
 
 10. Recarga Hyprland:
    ```bash
